@@ -108,11 +108,11 @@ Commit history reflects this progression clearly, especially for:
 
 git clone https://github.com/Ishita-1956/sweet_shop_manager.git
 
-cd sweet_shop_manager
+     cd sweet_shop_manager
 
 2. Install dependencies
 
-npm install
+      npm install
 
 3. Set environment variables
 
@@ -120,13 +120,11 @@ Create a .env.local file with required keys (database, auth secrets).
 
 4. Start the development server
 
-npm run dev
+      npm run dev
 
-5. Run tests
 
-npm test
+    📊 Test Report
 
-📊 Test Report
 Authentication logic: ✅ covered
 
 Order creation and user linkage: ✅ covered
@@ -138,6 +136,7 @@ Edge cases (out of stock, invalid user): ✅ covered
 All tests pass before refactoring steps.
 
 🤖 My AI Usage
+
 AI tools were used intentionally and transparently to assist, not replace, development.
 
 Tools Used
