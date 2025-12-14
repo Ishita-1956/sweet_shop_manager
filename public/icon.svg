@@ -1,0 +1,53 @@
+<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    @media (prefers-color-scheme: light) {
+      .background { fill: #FCD34D; }
+      .candy { fill: #F59E0B; }
+      .accent { fill: #FBBF24; }
+      .wrapper { fill: #FFFFFF; }
+    }
+    @media (prefers-color-scheme: dark) {
+      .background { fill: #F59E0B; }
+      .candy { fill: #FCD34D; }
+      .accent { fill: #FDE047; }
+      .wrapper { fill: #FFFFFF; }
+    }
+  </style>
+  <g clip-path="url(#clip0_sweet_shop)">
+    <rect class="background" width="180" height="180" rx="37" />
+    
+    <!-- Candy wrapper left side -->
+    <path class="wrapper" d="M45 75 L55 70 L55 110 L45 105 Z" opacity="0.9" />
+    
+    <!-- Main candy body -->
+    <ellipse class="candy" cx="90" cy="90" rx="35" ry="30" />
+    
+    <!-- Candy highlights -->
+    <ellipse class="accent" cx="85" cy="85" rx="15" ry="12" opacity="0.6" />
+    <ellipse class="accent" cx="95" cy="95" rx="10" ry="8" opacity="0.4" />
+    
+    <!-- Candy wrapper right side -->
+    <path class="wrapper" d="M135 75 L125 70 L125 110 L135 105 Z" opacity="0.9" />
+    
+    <!-- Wrapper twist lines -->
+    <line x1="55" y1="75" x2="60" y2="73" stroke="white" stroke-width="1.5" opacity="0.7" />
+    <line x1="55" y1="80" x2="60" y2="78" stroke="white" stroke-width="1.5" opacity="0.7" />
+    <line x1="55" y1="100" x2="60" y2="102" stroke="white" stroke-width="1.5" opacity="0.7" />
+    <line x1="55" y1="105" x2="60" y2="107" stroke="white" stroke-width="1.5" opacity="0.7" />
+    
+    <line x1="125" y1="75" x2="120" y2="73" stroke="white" stroke-width="1.5" opacity="0.7" />
+    <line x1="125" y1="80" x2="120" y2="78" stroke="white" stroke-width="1.5" opacity="0.7" />
+    <line x1="125" y1="100" x2="120" y2="102" stroke="white" stroke-width="1.5" opacity="0.7" />
+    <line x1="125" y1="105" x2="120" y2="107" stroke="white" stroke-width="1.5" opacity="0.7" />
+    
+    <!-- Sparkle effects -->
+    <circle class="wrapper" cx="75" cy="70" r="3" opacity="0.8" />
+    <circle class="wrapper" cx="105" cy="75" r="2.5" opacity="0.8" />
+    <circle class="wrapper" cx="95" cy="110" r="2" opacity="0.8" />
+  </g>
+  <defs>
+    <clipPath id="clip0_sweet_shop">
+      <rect width="180" height="180" fill="white" />
+    </clipPath>
+  </defs>
+</svg>
