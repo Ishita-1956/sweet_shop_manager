@@ -1,162 +1,197 @@
-# Sweet Shop Management System
+# 🍬 Sweet Shop Management System
 
-A comprehensive sweet shop management system built with Next.js, TypeScript, Supabase, and Tailwind CSS.
+A full-stack Sweet Shop Management System built as a Test-Driven Development (TDD) kata.  
+The application allows users to browse and purchase sweets, while admins can manage inventory, orders, and stock levels through a secure backend.
 
-## Features
+🔗 **Live Application**:  
+https://sweet-shop-manager-dlh4.vercel.app/
 
-- **Authentication**: Email/password authentication with role-based access (Admin/User)
-- **Dashboard**: Overview with statistics and sweets catalog
-- **Inventory Management**: Full CRUD operations for sweet products with image upload
-- **Orders**: Purchase tracking with role-based views
-- **Users**: Admin-only user management
-- **Settings**: Profile management, shop configuration, and theme toggle (light/dark mode)
+---
 
-## Setup Instructions
+## 📌 Project Overview
 
-### Prerequisites
+This project demonstrates practical skills in:
 
-- Node.js 18+ installed
-- A Supabase account and project
+- Backend API development with authentication
+- Database-driven inventory management
+- Frontend single-page application development
+- Test-Driven Development (Red → Green → Refactor)
+- Clean code and maintainable architecture
+- Transparent and responsible use of AI tools
 
-### Installation Steps
+The system supports:
+- User registration and login
+- Viewing and searching sweets
+- Purchasing sweets with stock validation
+- Admin-only inventory and stock management
+- Persistent UI preferences (dark mode)
 
-1. **Clone or download the project**
-   \`\`\`bash
-   # If downloaded as ZIP, extract it first
-   cd sweet-shop-management
-   \`\`\`
+---
 
-2. **Install dependencies**
-   \`\`\`bash
-   npm install
-   \`\`\`
+## 🧱 Tech Stack
 
-3. **Configure Environment Variables**
-   
-   The environment variables are already configured in your Vercel project. For local development, create a `.env.local` file:
-   
-   \`\`\`env
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   \`\`\`
+### Frontend
+- Next.js (React)
+- TypeScript
+- Tailwind CSS
+- Deployed on **Vercel**
 
-4. **Run Database Migrations**
-   
-   The SQL scripts in the `scripts` folder need to be run in your Supabase project:
-   
-   - Go to your Supabase Dashboard
-   - Navigate to SQL Editor
-   - Run each script in order:
-     1. `001_create_tables.sql` - Creates tables and RLS policies
-     2. `002_seed_data.sql` - Seeds initial sweet products
-     3. `003_add_theme_column.sql` - Adds theme support
-     4. `004_create_storage_bucket.sql` - Sets up image storage
+### Backend
+- Node.js with API routes
+- Token-based authentication
+- Role-based access control (User / Admin)
 
-5. **Disable Email Confirmation** (Already done, but for reference)
-   
-   - Go to Supabase Dashboard → Authentication → Providers → Email
-   - Turn OFF "Confirm email"
+### Database
+- Persistent database (Supabase / PostgreSQL)
 
-6. **Start the Development Server**
-   \`\`\`bash
-   npm run dev
-   \`\`\`
+### Testing
+- Jest (unit and integration tests)
+- Tests written before core backend logic (TDD)
 
-7. **Open in Browser**
-   
-   Navigate to [http://localhost:3000](http://localhost:3000)
+---
 
-## Usage
+## 🔐 Authentication & Authorization
 
-### First Time Setup
+- Users can register and log in securely
+- JWT-based authentication protects API routes
+- Admin-only permissions for:
+  - Deleting sweets
+  - Restocking inventory
+  - Managing orders
 
-1. **Create an Admin Account**
-   - Go to `/auth/sign-up`
-   - Fill in your details
-   - Select "Admin" as your role
-   - Sign up
+---
 
-2. **Add Products**
-   - Navigate to Dashboard → Inventory
-   - Use the "Quick Add Sweet" panel
-   - Upload images via drag & drop or file selection
+## 🍩 Core Features
 
-3. **Manage Orders**
-   - Users can purchase from the main dashboard
-   - Orders appear in the Orders tab
-   - Admins can update order status
+### User Features
+- Register and log in
+- View all available sweets
+- Search sweets by name and category
+- Purchase sweets (disabled if out of stock)
+- Dark mode preference persists across refreshes
 
-## Project Structure
+### Admin Features
+- Add, update, and delete sweets
+- Restock inventory
+- Manage orders and user-order relationships
+- Automatic stock decrement on purchase
 
-\`\`\`
-├── app/
-│   ├── auth/          # Authentication pages
-│   ├── dashboard/     # Dashboard pages (inventory, orders, users, settings)
-│   ├── layout.tsx     # Root layout
-│   └── page.tsx       # Landing page
-├── components/        # Reusable components
-├── lib/              # Utilities and Supabase clients
-├── scripts/          # Database migration scripts
-└── public/           # Static assets
-\`\`\`
+---
 
-## Key Technologies
+## 🧪 Test-Driven Development (TDD)
 
-- **Framework**: Next.js 15 with App Router
-- **Language**: TypeScript
-- **Database**: PostgreSQL (via Supabase)
-- **Authentication**: Supabase Auth
-- **Storage**: Supabase Storage
-- **Styling**: Tailwind CSS v4
-- **UI Components**: shadcn/ui
+The backend logic follows a **Red → Green → Refactor** approach:
 
-## Features Breakdown
+1. **Red**: Tests written first for auth, orders, and inventory logic
+2. **Green**: Minimal implementation to pass tests
+3. **Refactor**: Cleanup for readability, separation of concerns, and maintainability
 
-### Authentication
-- Email/password sign up and login
-- Role-based access (Admin/User)
-- Automatic profile creation
-- Toast notifications for success/error
+Commit history reflects this progression clearly, especially for:
+- Authentication flow
+- Order-user linkage
+- Stock decrement logic
 
-### Dark Mode
-- System-wide theme toggle
-- Persists across sessions
-- Applies to all dashboard pages
+---
 
-### Inventory
-- Add/Edit/Delete sweets
-- Drag & drop image upload
-- Stock management with visual indicators
-- Category organization
-- CSV export
+## 🧹 Clean Coding Practices
 
-### Orders
-- Purchase functionality
-- Automatic stock deduction
-- Order status tracking
-- Role-based views (users see only their orders, admins see all)
+- Clear separation of concerns (auth, orders, inventory)
+- Meaningful variable and function names
+- Reusable utility functions
+- No business logic inside UI components
+- Comments added where intent is non-obvious
 
-### Settings
-- Profile management
-- Shop configuration
-- Theme preferences
-- Currency selection
+---
+## ▶️ Running the Project Locally
 
-## Troubleshooting
+### 1. Clone the repository
 
-### Images not uploading
-- Ensure the storage bucket is created (run `004_create_storage_bucket.sql`)
-- Check storage policies in Supabase Dashboard
+git clone https://github.com/Ishita-1956/sweet_shop_manager.git
 
-### Authentication not working
-- Verify environment variables are set correctly
-- Ensure email confirmation is disabled in Supabase
-- Check browser console for errors
+cd sweet_shop_manager
 
-### Dark mode not persisting
-- Clear localStorage and try again
-- Ensure theme is saved in settings
+2. Install dependencies
 
-## Support
+npm install
 
-For issues or questions, check the browser console for error messages and verify all database scripts have been run successfully.
+3. Set environment variables
+
+Create a .env.local file with required keys (database, auth secrets).
+
+4. Start the development server
+
+npm run dev
+
+5. Run tests
+
+npm test
+
+📊 Test Report
+Authentication logic: ✅ covered
+
+Order creation and user linkage: ✅ covered
+
+Stock decrement and validation: ✅ covered
+
+Edge cases (out of stock, invalid user): ✅ covered
+
+All tests pass before refactoring steps.
+
+🤖 My AI Usage
+AI tools were used intentionally and transparently to assist, not replace, development.
+
+Tools Used
+Claude
+Reasoned about authentication edge cases
+
+Helped debug broken auth flow
+
+Assisted in designing order-user relationships
+
+Suggested test cases for inventory logic
+
+GitHub Copilot
+Generated initial boilerplate for API handlers
+
+Helped scaffold repetitive code
+
+All generated code was manually reviewed and modified
+
+Google Gemini
+Used for UI experimentation and image generation
+
+Assisted with visual layout ideas for product cards
+
+Google Stitch
+Explored UI layout patterns and animations
+
+Ideas were applied manually, not auto-generated
+
+How AI Helped My Workflow
+AI reduced time spent on repetitive setup and helped me think through edge cases faster.
+All architectural decisions, business logic, and final code structure were written and validated by me. AI was treated as a collaborative assistant, not an automated solution.
+
+Each commit that involved AI usage includes a proper co-author attribution, as required.
+
+📸 Screenshots
+
+### Login
+![Login Screen](screenshots/login.jpeg)
+
+### Dashboard
+![Dashboard](screenshots/dashboard.jpeg)
+
+### Homepage
+![homepage](screenshots/homepage.jpeg)
+
+### Admin Inventory
+![Admin Inventory](screenshots/inventory.jpeg)
+
+
+🚀 Deployment
+
+Frontend deployed on Vercel
+
+Live URL:
+https://sweet-shop-manager-dlh4.vercel.app/
+
