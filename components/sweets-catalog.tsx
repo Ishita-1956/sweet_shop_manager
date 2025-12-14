@@ -212,30 +212,30 @@ export function SweetsCatalog() {
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-l-4 border-l-yellow-500">
+        <Card className="border-l-4 border-l-yellow-500 dark:border-l-yellow-600">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Products</CardTitle>
-            <Package className="h-4 w-4 text-yellow-500" />
+            <Package className="h-4 w-4 text-yellow-500 dark:text-yellow-400" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-green-500">
+        <Card className="border-l-4 border-l-green-500 dark:border-l-green-600">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">In Stock</CardTitle>
-            <ShoppingBag className="h-4 w-4 text-green-500" />
+            <ShoppingBag className="h-4 w-4 text-green-500 dark:text-green-400" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.inStock}</div>
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-orange-500">
+        <Card className="border-l-4 border-l-orange-500 dark:border-l-orange-600">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Low Stock Alert</CardTitle>
-            <TrendingUp className="h-4 w-4 text-orange-500" />
+            <TrendingUp className="h-4 w-4 text-orange-500 dark:text-orange-400" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.lowStock}</div>
@@ -245,9 +245,9 @@ export function SweetsCatalog() {
 
       {/* Search and Filters */}
       <Card className="shadow-md">
-        <CardHeader className="bg-gradient-to-r from-yellow-50 to-orange-50">
+        <CardHeader className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-gray-800 dark:to-gray-900 border-b dark:border-gray-700">
           <CardTitle className="text-xl">Search Sweets</CardTitle>
-          <CardDescription>Find the perfect sweet by name, category, or price range</CardDescription>
+          <CardDescription className="dark:text-gray-400">Find the perfect sweet by name, category, or price range</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 pt-6">
           <div className="relative">
@@ -256,29 +256,29 @@ export function SweetsCatalog() {
               placeholder="Search by name or description..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-11"
+              className="pl-10 h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Category</label>
+              <label className="text-sm font-medium dark:text-gray-300">Category</label>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="h-11">
+                <SelectTrigger className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="All">All Categories</SelectItem>
-                  <SelectItem value="Chocolates">🍫 Chocolates</SelectItem>
-                  <SelectItem value="Pastries">🥐 Pastries</SelectItem>
-                  <SelectItem value="Candies">🍬 Candies</SelectItem>
-                  <SelectItem value="Vegan">🌱 Vegan</SelectItem>
+                <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
+                  <SelectItem value="All" className="dark:text-gray-100 dark:focus:bg-gray-700">All Categories</SelectItem>
+                  <SelectItem value="Chocolates" className="dark:text-gray-100 dark:focus:bg-gray-700">🍫 Chocolates</SelectItem>
+                  <SelectItem value="Pastries" className="dark:text-gray-100 dark:focus:bg-gray-700">🥐 Pastries</SelectItem>
+                  <SelectItem value="Candies" className="dark:text-gray-100 dark:focus:bg-gray-700">🍬 Candies</SelectItem>
+                  <SelectItem value="Vegan" className="dark:text-gray-100 dark:focus:bg-gray-700">🌱 Vegan</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Min Price ($)</label>
+              <label className="text-sm font-medium dark:text-gray-300">Min Price ($)</label>
               <Input
                 type="number"
                 placeholder="0.00"
@@ -286,12 +286,12 @@ export function SweetsCatalog() {
                 onChange={(e) => setMinPrice(e.target.value)}
                 min="0"
                 step="0.01"
-                className="h-11"
+                className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Max Price ($)</label>
+              <label className="text-sm font-medium dark:text-gray-300">Max Price ($)</label>
               <Input
                 type="number"
                 placeholder="100.00"
@@ -299,7 +299,7 @@ export function SweetsCatalog() {
                 onChange={(e) => setMaxPrice(e.target.value)}
                 min="0"
                 step="0.01"
-                className="h-11"
+                className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
               />
             </div>
           </div>
@@ -313,7 +313,7 @@ export function SweetsCatalog() {
                 setMinPrice("")
                 setMaxPrice("")
               }}
-              className="w-full md:w-auto"
+              className="w-full md:w-auto dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 dark:hover:bg-gray-700"
             >
               Clear Filters
             </Button>
@@ -328,8 +328,8 @@ export function SweetsCatalog() {
           const imageUrl = sweet.image_url || getProductImage(sweet.name, sweet.category)
           
           return (
-            <Card key={sweet.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-              <div className="aspect-video relative bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden group">
+            <Card key={sweet.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 dark:bg-gray-800 dark:border-gray-700">
+              <div className="aspect-video relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 overflow-hidden group">
                 <Image 
                   src={imageUrl} 
                   alt={sweet.name} 
@@ -338,29 +338,29 @@ export function SweetsCatalog() {
                   unoptimized
                 />
                 <div className="absolute top-2 right-2">
-                  <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
+                  <Badge variant="secondary" className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm dark:text-gray-100">
                     {sweet.category}
                   </Badge>
                 </div>
               </div>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-lg leading-tight">{sweet.name}</CardTitle>
+                  <CardTitle className="text-lg leading-tight dark:text-gray-100">{sweet.name}</CardTitle>
                 </div>
-                <CardDescription className="line-clamp-2 text-sm">
+                <CardDescription className="line-clamp-2 text-sm dark:text-gray-400">
                   {sweet.description}
                 </CardDescription>
               </CardHeader>
               <CardContent className="pb-3">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-2xl font-bold text-yellow-600">
+                  <span className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                     ${sweet.price.toFixed(2)}
                   </span>
                   <Badge className={`${stockStatus.color} text-white`}>
                     {stockStatus.label}
                   </Badge>
                 </div>
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <p className="text-xs text-muted-foreground dark:text-gray-500 flex items-center gap-1">
                   <Package className="h-3 w-3" />
                   Stock: {sweet.stock} units
                 </p>
@@ -369,7 +369,7 @@ export function SweetsCatalog() {
                 <Button
                   onClick={() => handlePurchase(sweet)}
                   disabled={sweet.stock === 0}
-                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold shadow-md transition-all duration-300"
+                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold shadow-md transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {sweet.stock === 0 ? "Out of Stock" : "Add to Cart"}
                 </Button>
@@ -380,11 +380,11 @@ export function SweetsCatalog() {
       </div>
 
       {filteredSweets.length === 0 && (
-        <Card className="border-dashed">
+        <Card className="border-dashed dark:bg-gray-800 dark:border-gray-700">
           <CardContent className="text-center py-16">
-            <ShoppingBag className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium text-muted-foreground mb-2">No sweets found</p>
-            <p className="text-sm text-muted-foreground">
+            <ShoppingBag className="h-16 w-16 text-muted-foreground dark:text-gray-600 mx-auto mb-4 opacity-50" />
+            <p className="text-lg font-medium text-muted-foreground dark:text-gray-400 mb-2">No sweets found</p>
+            <p className="text-sm text-muted-foreground dark:text-gray-500">
               Try adjusting your filters or search query
             </p>
           </CardContent>
