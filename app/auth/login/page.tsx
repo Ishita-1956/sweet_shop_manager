@@ -20,6 +20,42 @@ export default function LoginPage() {
   const router = useRouter()
   const { toast } = useToast()
 
+  const ensureProfileExists = async (userId: string, userEmail: string) => {
+    const supabase = createClient()
+    
+    // Check if profile exists
+    const { data: existingProfile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", userId)
+      .single()
+
+    // If profile doesn't exist, create it
+    if (!existingProfile) {
+      console.log("Creating missing profile for user:", userEmail)
+      
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .insert({
+          id: userId,
+          email: userEmail,
+          full_name: userEmail.split("@")[0], // Use email username as name
+          role: "user"
+        })
+
+      if (profileError) {
+        console.error("Error creating profile:", profileError)
+      } else {
+        // Also create default settings
+        await supabase
+          .from("settings")
+          .insert({
+            user_id: userId
+          })
+      }
+    }
+  }
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     const supabase = createClient()
@@ -36,8 +72,13 @@ export default function LoginPage() {
         throw error
       }
 
+      // Ensure profile exists for this user
+      if (data.user) {
+        await ensureProfileExists(data.user.id, data.user.email || email)
+      }
+
       toast({
-        title: "Login successful!",
+        title: "Login successful! 🎉",
         description: "Welcome back to Sweet Shop Manager.",
       })
 
@@ -56,15 +97,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center p-6 bg-gradient-to-br from-yellow-50 via-white to-orange-50 relative overflow-hidden">
+    <div className="flex min-h-screen w-full items-center justify-center p-6 bg-gradient-to-br from-yellow-50 via-white to-orange-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Floating Blurred Circles */}
-        <div className="absolute top-20 left-10 w-32 h-32 bg-yellow-300 rounded-full blur-3xl opacity-20 animate-float" style={{ animationDelay: '0s', animationDuration: '8s' }}></div>
-        <div className="absolute top-40 right-20 w-40 h-40 bg-orange-300 rounded-full blur-3xl opacity-20 animate-float" style={{ animationDelay: '2s', animationDuration: '10s' }}></div>
-        <div className="absolute bottom-40 left-1/4 w-36 h-36 bg-yellow-400 rounded-full blur-3xl opacity-20 animate-float" style={{ animationDelay: '4s', animationDuration: '9s' }}></div>
-        <div className="absolute top-1/3 right-1/3 w-44 h-44 bg-orange-200 rounded-full blur-3xl opacity-20 animate-float" style={{ animationDelay: '1s', animationDuration: '11s' }}></div>
-        <div className="absolute bottom-20 right-10 w-32 h-32 bg-yellow-300 rounded-full blur-3xl opacity-20 animate-float" style={{ animationDelay: '3s', animationDuration: '7s' }}></div>
+        <div className="absolute top-20 left-10 w-32 h-32 bg-yellow-300 dark:bg-yellow-600 rounded-full blur-3xl opacity-20 animate-float" style={{ animationDelay: '0s', animationDuration: '8s' }}></div>
+        <div className="absolute top-40 right-20 w-40 h-40 bg-orange-300 dark:bg-orange-600 rounded-full blur-3xl opacity-20 animate-float" style={{ animationDelay: '2s', animationDuration: '10s' }}></div>
+        <div className="absolute bottom-40 left-1/4 w-36 h-36 bg-yellow-400 dark:bg-yellow-500 rounded-full blur-3xl opacity-20 animate-float" style={{ animationDelay: '4s', animationDuration: '9s' }}></div>
+        <div className="absolute top-1/3 right-1/3 w-44 h-44 bg-orange-200 dark:bg-orange-700 rounded-full blur-3xl opacity-20 animate-float" style={{ animationDelay: '1s', animationDuration: '11s' }}></div>
+        <div className="absolute bottom-20 right-10 w-32 h-32 bg-yellow-300 dark:bg-yellow-600 rounded-full blur-3xl opacity-20 animate-float" style={{ animationDelay: '3s', animationDuration: '7s' }}></div>
 
         {/* Candy Icons with Text Shadow for Better Visibility */}
         <div className="absolute top-10 left-20 text-6xl opacity-30 animate-float candy-shadow" style={{ animationDelay: '0s', animationDuration: '12s' }}>🍭</div>
@@ -82,18 +123,18 @@ export default function LoginPage() {
           <div className="flex flex-col items-center gap-2 text-center">
             <div className="text-5xl mb-2">🍭</div>
             <h1 className="text-3xl font-bold text-balance bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">Sweet Shop Manager</h1>
-            <p className="text-muted-foreground text-balance">Manage your sweet shop inventory with ease</p>
+            <p className="text-muted-foreground dark:text-gray-400 text-balance">Manage your sweet shop inventory with ease</p>
           </div>
-          <Card className="border-2 shadow-xl">
+          <Card className="border-2 shadow-xl dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle className="text-2xl">Login</CardTitle>
-              <CardDescription>Enter your credentials to access your account</CardDescription>
+              <CardTitle className="text-2xl dark:text-gray-100">Login</CardTitle>
+              <CardDescription className="dark:text-gray-400">Enter your credentials to access your account</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleLogin}>
                 <div className="flex flex-col gap-6">
                   <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email" className="dark:text-gray-300">Email</Label>
                     <Input
                       id="email"
                       type="email"
@@ -101,32 +142,45 @@ export default function LoginPage() {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password" className="dark:text-gray-300">Password</Label>
                     <Input
                       id="password"
                       type="password"
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                     />
                   </div>
-                  {error && <p className="text-sm text-red-500">{error}</p>}
+                  {error && (
+                    <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                      <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                    </div>
+                  )}
                   <Button
                     type="submit"
-                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold"
+                    className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold shadow-lg"
                     disabled={isLoading}
                   >
-                    {isLoading ? "Logging in..." : "Login"}
+                    {isLoading ? (
+                      <span className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Logging in...
+                      </span>
+                    ) : (
+                      "Login"
+                    )}
                   </Button>
                 </div>
-                <div className="mt-4 text-center text-sm">
+                <div className="mt-4 text-center text-sm dark:text-gray-400">
                   Don&apos;t have an account?{" "}
                   <Link
                     href="/auth/sign-up"
-                    className="underline underline-offset-4 text-yellow-600 hover:text-yellow-700 font-semibold"
+                    className="underline underline-offset-4 text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300 font-semibold"
                   >
                     Sign up
                   </Link>

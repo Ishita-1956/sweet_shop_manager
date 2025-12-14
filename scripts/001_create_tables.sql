@@ -36,13 +36,14 @@ create table if not exists public.orders (
   created_at timestamp with time zone default now()
 );
 
--- Create settings table
+-- Create settings table with theme support
 create table if not exists public.settings (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references public.profiles(id) on delete cascade,
   shop_name text default 'Sweet Shop Manager',
   currency text default 'USD',
   low_stock_threshold integer default 10,
+  theme text default 'light' check (theme in ('light', 'dark')),
   notifications_enabled boolean default true,
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now(),
@@ -60,6 +61,16 @@ create policy "Users can view their own profile"
   on public.profiles for select
   using (auth.uid() = id);
 
+-- ✅ NEW: Allow admins to view ALL profiles
+create policy "Admins can view all profiles"
+  on public.profiles for select
+  using (
+    exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid() and profiles.role = 'admin'
+    )
+  );
+
 create policy "Users can update their own profile"
   on public.profiles for update
   using (auth.uid() = id);
@@ -73,18 +84,14 @@ create policy "Everyone can view sweets"
   on public.sweets for select
   using (true);
 
+-- ✅ NEW: Allow authenticated users to update sweets (for purchases)
+create policy "Authenticated users can update sweets"
+  on public.sweets for update
+  using (auth.uid() is not null);
+
 create policy "Only admins can insert sweets"
   on public.sweets for insert
   with check (
-    exists (
-      select 1 from public.profiles
-      where profiles.id = auth.uid() and profiles.role = 'admin'
-    )
-  );
-
-create policy "Only admins can update sweets"
-  on public.sweets for update
-  using (
     exists (
       select 1 from public.profiles
       where profiles.id = auth.uid() and profiles.role = 'admin'
@@ -157,8 +164,8 @@ begin
   );
   
   -- Create default settings
-  insert into public.settings (user_id)
-  values (new.id);
+  insert into public.settings (user_id, theme)
+  values (new.id, 'light');
   
   return new;
 end;
@@ -197,3 +204,29 @@ create trigger settings_updated_at
   before update on public.settings
   for each row
   execute function public.handle_updated_at();
+
+-- Create storage bucket for sweet images
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('images', 'images', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Set up storage policies for images bucket
+CREATE POLICY "Public Access"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'images');
+
+CREATE POLICY "Authenticated users can upload images"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'images');
+
+CREATE POLICY "Users can update their uploads"
+ON storage.objects FOR UPDATE
+TO authenticated
+USING (bucket_id = 'images');
+
+CREATE POLICY "Users can delete their uploads"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (bucket_id = 'images');

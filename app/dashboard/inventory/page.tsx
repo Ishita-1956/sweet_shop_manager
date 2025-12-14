@@ -24,6 +24,49 @@ export default function InventoryPage() {
     checkAccess()
   }, [])
 
+  useEffect(() => {
+    if (!isAdmin) return
+
+    // Set up real-time subscription for stock updates
+    const sweetsChannel = supabase
+      .channel('inventory-sweets-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'sweets'
+        },
+        (payload) => {
+          console.log('Inventory: Stock change detected:', payload)
+          fetchStats()
+        }
+      )
+      .subscribe()
+
+    // Also listen to order changes for revenue updates
+    const ordersChannel = supabase
+      .channel('inventory-orders-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders'
+        },
+        (payload) => {
+          console.log('Inventory: Order change detected:', payload)
+          fetchStats()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(sweetsChannel)
+      supabase.removeChannel(ordersChannel)
+    }
+  }, [isAdmin])
+
   const checkAccess = async () => {
     const {
       data: { user },
@@ -56,7 +99,14 @@ export default function InventoryPage() {
   }
 
   if (loading) {
-    return <div className="text-center py-8">Loading...</div>
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mx-auto"></div>
+          <p className="text-muted-foreground">Loading inventory...</p>
+        </div>
+      </div>
+    )
   }
 
   if (!isAdmin) {

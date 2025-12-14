@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, ShoppingBag, TrendingUp, Package } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 
 type Sweet = {
   id: string
@@ -78,11 +79,34 @@ export function SweetsCatalog() {
   const [minPrice, setMinPrice] = useState("")
   const [maxPrice, setMaxPrice] = useState("")
   const [loading, setLoading] = useState(true)
+  const [purchasing, setPurchasing] = useState<string | null>(null)
   const supabase = createClient()
   const { toast } = useToast()
+  const router = useRouter()
 
   useEffect(() => {
     fetchSweets()
+    
+    // Set up real-time subscription for stock updates
+    const channel = supabase
+      .channel('sweets-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'sweets'
+        },
+        (payload) => {
+          console.log('Stock change detected:', payload)
+          fetchSweets()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   useEffect(() => {
@@ -90,12 +114,15 @@ export function SweetsCatalog() {
   }, [searchQuery, categoryFilter, minPrice, maxPrice, sweets])
 
   const fetchSweets = async () => {
+    console.log('SweetsCatalog: Fetching sweets from database...')
     setLoading(true)
     const { data, error } = await supabase.from("sweets").select("*").order("name")
 
     if (error) {
+      console.error("Error fetching sweets:", error)
       toast({ title: "Error", description: "Failed to load sweets", variant: "destructive" })
     } else {
+      console.log("Fetched sweets with current stock:", data?.map(s => ({ name: s.name, stock: s.stock })))
       setSweets(data || [])
     }
     setLoading(false)
@@ -138,7 +165,9 @@ export function SweetsCatalog() {
   }
 
   const handlePurchase = async (sweet: Sweet) => {
-    if (sweet.stock === 0) return
+    if (sweet.stock === 0 || purchasing) return
+
+    setPurchasing(sweet.id)
 
     const {
       data: { user },
@@ -150,38 +179,68 @@ export function SweetsCatalog() {
         description: "Please log in to make a purchase", 
         variant: "destructive" 
       })
+      setPurchasing(null)
       return
     }
 
-    // Create order
-    const { error: orderError } = await supabase.from("orders").insert({
-      user_id: user.id,
-      sweet_id: sweet.id,
-      sweet_name: sweet.name,
-      quantity: 1,
-      total_price: sweet.price,
-      status: "pending",
-    })
+    // ✅ SIMPLE LOGIC: DECREASE STOCK IMMEDIATELY IN UI
+    const newStock = sweet.stock - 1
+    console.log(`🔥 IMMEDIATELY decreasing stock: ${sweet.name} from ${sweet.stock} to ${newStock}`)
+    
+    // Update UI RIGHT NOW - don't wait for database
+    setSweets(prevSweets => 
+      prevSweets.map(s => 
+        s.id === sweet.id ? { ...s, stock: newStock } : s
+      )
+    )
 
-    if (orderError) {
-      toast({ title: "Error", description: "Failed to create order", variant: "destructive" })
-      return
-    }
+    try {
+      console.log(`Starting purchase for ${sweet.name} (ID: ${sweet.id})`)
 
-    // Update stock
-    const { error: stockError } = await supabase
-      .from("sweets")
-      .update({ stock: sweet.stock - 1 })
-      .eq("id", sweet.id)
+      // Step 1: Create the order
+      const { error: orderError } = await supabase.from("orders").insert({
+        user_id: user.id,
+        sweet_id: sweet.id,
+        sweet_name: sweet.name,
+        quantity: 1,
+        total_price: sweet.price,
+        status: "pending",
+      })
 
-    if (stockError) {
-      toast({ title: "Error", description: "Failed to update stock", variant: "destructive" })
-    } else {
+      if (orderError) throw orderError
+
+      // Step 2: Update stock in database
+      const { error: stockError } = await supabase
+        .from("sweets")
+        .update({ stock: newStock })
+        .eq("id", sweet.id)
+
+      if (stockError) throw stockError
+
+      console.log("✅ Purchase complete! Stock updated in database")
+
       toast({ 
         title: "Purchase Successful! 🎉", 
         description: `${sweet.name} has been added to your orders`,
       })
-      fetchSweets()
+      
+    } catch (error: any) {
+      console.error("❌ Purchase error:", error)
+      
+      // ROLLBACK: If database fails, restore the old stock
+      setSweets(prevSweets => 
+        prevSweets.map(s => 
+          s.id === sweet.id ? { ...s, stock: sweet.stock } : s
+        )
+      )
+      
+      toast({ 
+        title: "Error", 
+        description: "Failed to complete purchase. Please try again.", 
+        variant: "destructive" 
+      })
+    } finally {
+      setPurchasing(null)
     }
   }
 
@@ -326,17 +385,27 @@ export function SweetsCatalog() {
         {filteredSweets.map((sweet) => {
           const stockStatus = getStockStatus(sweet.stock)
           const imageUrl = sweet.image_url || getProductImage(sweet.name, sweet.category)
+          const isOutOfStock = sweet.stock === 0
+          const isPurchasing = purchasing === sweet.id
           
           return (
-            <Card key={sweet.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 dark:bg-gray-800 dark:border-gray-700">
+            <Card key={`${sweet.id}-${sweet.stock}`} className={`overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 dark:bg-gray-800 dark:border-gray-700 ${isOutOfStock ? 'opacity-90' : ''}`}>
               <div className="aspect-video relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 overflow-hidden group">
                 <Image 
                   src={imageUrl} 
                   alt={sweet.name} 
                   fill 
-                  className="object-cover transition-transform duration-300 group-hover:scale-110" 
+                  className={`object-cover transition-all duration-300 ${isOutOfStock ? 'grayscale brightness-50 group-hover:scale-100' : 'group-hover:scale-110'}`}
                   unoptimized
                 />
+                {/* Out of Stock Overlay */}
+                {isOutOfStock && (
+                  <div className="absolute inset-0 bg-gray-400/40 dark:bg-gray-600/40 flex items-center justify-center backdrop-blur-[1px]">
+                    <div className="text-center">
+                      <p className="text-white font-bold text-xl drop-shadow-lg">OUT OF STOCK</p>
+                    </div>
+                  </div>
+                )}
                 <div className="absolute top-2 right-2">
                   <Badge variant="secondary" className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm dark:text-gray-100">
                     {sweet.category}
@@ -345,15 +414,17 @@ export function SweetsCatalog() {
               </div>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-lg leading-tight dark:text-gray-100">{sweet.name}</CardTitle>
+                  <CardTitle className={`text-lg leading-tight dark:text-gray-100 ${isOutOfStock ? 'text-gray-500 dark:text-gray-500' : ''}`}>
+                    {sweet.name}
+                  </CardTitle>
                 </div>
-                <CardDescription className="line-clamp-2 text-sm dark:text-gray-400">
+                <CardDescription className={`line-clamp-2 text-sm ${isOutOfStock ? 'text-gray-400 dark:text-gray-600' : 'dark:text-gray-400'}`}>
                   {sweet.description}
                 </CardDescription>
               </CardHeader>
               <CardContent className="pb-3">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                  <span className={`text-2xl font-bold ${isOutOfStock ? 'text-gray-400 dark:text-gray-600' : 'text-yellow-600 dark:text-yellow-400'}`}>
                     ${sweet.price.toFixed(2)}
                   </span>
                   <Badge className={`${stockStatus.color} text-white`}>
@@ -368,10 +439,23 @@ export function SweetsCatalog() {
               <CardFooter className="pt-0">
                 <Button
                   onClick={() => handlePurchase(sweet)}
-                  disabled={sweet.stock === 0}
-                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold shadow-md transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isOutOfStock || isPurchasing}
+                  className={`w-full font-semibold shadow-md transition-all duration-300 ${
+                    isOutOfStock || isPurchasing
+                      ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed text-gray-700' 
+                      : 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white'
+                  }`}
                 >
-                  {sweet.stock === 0 ? "Out of Stock" : "Add to Cart"}
+                  {isPurchasing ? (
+                    <span className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Processing...
+                    </span>
+                  ) : isOutOfStock ? (
+                    "Out of Stock"
+                  ) : (
+                    "Add to Cart"
+                  )}
                 </Button>
               </CardFooter>
             </Card>

@@ -29,6 +29,49 @@ export default function UsersPage() {
     checkAccess()
   }, [])
 
+  useEffect(() => {
+    if (!isAdmin) return
+
+    // Real-time subscription for profile changes
+    const profilesChannel = supabase
+      .channel('users-profiles-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles'
+        },
+        (payload) => {
+          console.log('Users page: Profile change detected:', payload)
+          fetchUsers()
+        }
+      )
+      .subscribe()
+
+    // Real-time subscription for order changes
+    const ordersChannel = supabase
+      .channel('users-orders-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders'
+        },
+        (payload) => {
+          console.log('Users page: Order change detected:', payload)
+          fetchUsers()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(profilesChannel)
+      supabase.removeChannel(ordersChannel)
+    }
+  }, [isAdmin])
+
   const checkAccess = async () => {
     const {
       data: { user },
@@ -49,10 +92,30 @@ export default function UsersPage() {
   }
 
   const fetchUsers = async () => {
-    const { data: profilesData } = await supabase.from("profiles").select("*").order("created_at", { ascending: false })
-    const { data: orderCounts } = await supabase.from("orders").select("user_id")
+    console.log('Fetching all users and their order counts...')
+    
+    // Fetch all profiles
+    const { data: profilesData, error: profilesError } = await supabase
+      .from("profiles")
+      .select("*")
+      .order("created_at", { ascending: false })
 
-    const counts = orderCounts?.reduce(
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError)
+      return
+    }
+
+    // Fetch all orders to count per user
+    const { data: orders, error: ordersError } = await supabase
+      .from("orders")
+      .select("user_id")
+
+    if (ordersError) {
+      console.error('Error fetching orders:', ordersError)
+    }
+
+    // Count orders per user
+    const counts = orders?.reduce(
       (acc, order) => {
         acc[order.user_id] = (acc[order.user_id] || 0) + 1
         return acc
@@ -60,12 +123,22 @@ export default function UsersPage() {
       {} as Record<string, number>,
     )
 
+    console.log('Users fetched:', profilesData?.length)
+    console.log('Order counts:', counts)
+
     setProfiles(profilesData || [])
     setUserOrderCounts(counts || {})
   }
 
   if (loading) {
-    return <div className="text-center py-8">Loading...</div>
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mx-auto"></div>
+          <p className="text-muted-foreground">Loading users...</p>
+        </div>
+      </div>
+    )
   }
 
   if (!isAdmin) {
@@ -109,99 +182,135 @@ export default function UsersPage() {
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="border-l-4 border-l-blue-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <Users className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
+            <p className="text-xs text-muted-foreground mt-1">Registered accounts</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-yellow-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Admins</CardTitle>
             <Shield className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.admins}</div>
+            <p className="text-xs text-muted-foreground mt-1">System administrators</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-green-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Customers</CardTitle>
             <UserCheck className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.users}</div>
+            <p className="text-xs text-muted-foreground mt-1">Regular users</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Users Table */}
-      <Card>
-        <CardHeader>
+      <Card className="shadow-md">
+        <CardHeader className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-gray-800 dark:to-gray-900 border-b">
           <CardTitle>All Users</CardTitle>
-          <CardDescription>Customer information and account details</CardDescription>
+          <CardDescription>Complete list of registered users with their details</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Orders</TableHead>
-                  <TableHead>Joined</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {profiles.map((profile) => {
-                  const initials = profile.full_name
-                    ? profile.full_name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                        .toUpperCase()
-                    : profile.email[0].toUpperCase()
+        <CardContent className="pt-6">
+          {profiles.length > 0 ? (
+            <div className="rounded-md border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead>User</TableHead>
+                    <TableHead>Email Address</TableHead>
+                    <TableHead>Full Name</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Total Orders</TableHead>
+                    <TableHead>Joined Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {profiles.map((profile) => {
+                    const initials = profile.full_name
+                      ? profile.full_name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .toUpperCase()
+                          .slice(0, 2)
+                      : profile.email.slice(0, 2).toUpperCase()
 
-                  return (
-                    <TableRow key={profile.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar>
-                            <AvatarFallback className="bg-yellow-100 text-yellow-900">{initials}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{profile.full_name || "No name"}</div>
-                            <div className="text-xs text-muted-foreground">ID: {profile.id.slice(0, 8)}...</div>
+                    return (
+                      <TableRow key={profile.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback className="bg-gradient-to-br from-yellow-400 to-orange-500 text-white font-semibold">
+                                {initials}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium">{profile.full_name || "No name set"}</div>
+                              <div className="text-xs text-muted-foreground font-mono">
+                                ID: {profile.id.slice(0, 8)}...
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{profile.email}</TableCell>
-                      <TableCell>
-                        <Badge className={profile.role === "admin" ? "bg-yellow-100 text-yellow-800" : ""}>
-                          {profile.role === "admin" && <Shield className="h-3 w-3 mr-1" />}
-                          {profile.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{userOrderCounts[profile.id] || 0} orders</TableCell>
-                      <TableCell className="text-sm">
-                        {new Date(profile.created_at).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">{profile.email}</div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm">{profile.full_name || "—"}</span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            className={
+                              profile.role === "admin" 
+                                ? "bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900 dark:text-yellow-200" 
+                                : "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900 dark:text-blue-200"
+                            }
+                          >
+                            {profile.role === "admin" && <Shield className="h-3 w-3 mr-1" />}
+                            {profile.role === "user" && <UserCheck className="h-3 w-3 mr-1" />}
+                            {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-yellow-600 dark:text-yellow-400">
+                              {userOrderCounts[profile.id] || 0}
+                            </span>
+                            <span className="text-xs text-muted-foreground">orders</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {new Date(profile.created_at).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-16 border-2 border-dashed rounded-lg">
+              <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <p className="text-lg font-medium text-muted-foreground mb-2">No users found</p>
+              <p className="text-sm text-muted-foreground">Users will appear here once they register</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
